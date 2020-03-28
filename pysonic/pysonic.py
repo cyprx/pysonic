@@ -102,8 +102,9 @@ class Client:
         self.conn.writer.write(bytes(f'START {mode} {self.password}\n', 'utf-8'))
         while True:
             line = self.conn.reader.readline()
-            if b'STARTED search' in line:
-                return b'CONNECTED'
+            if bytes(f'STARTED {mode}', 'utf-8') in line:
+                logger.info(f'Connected to Sonic with mode {mode}')
+                return True
 
     def query(self, collection: str, bucket: str, terms: str, limit=10, offset=0):
         cmd = bytes(f'QUERY {collection} {bucket} "{terms}"\n', 'utf-8')
@@ -111,6 +112,31 @@ class Client:
         event_id = None
         while True:
             line = self.conn.reader.readline()
+            if b'PENDING' in line:
+                event_id = self._parse_event_id(line)
+                print(f'Waiting for event {event_id}')
+            elif event_id and event_id in line:
+                return self._parse_query_results(line)
+
+    def push(self, collection: str, bucket: str, object: str, text: str) -> bool:
+        cmd = bytes(f'PUSH {collection} {bucket} {object} "{text}"\n', 'utf-8')
+        self.conn.writer.write(cmd)
+        while True:
+            try:
+                line = self.conn.reader.readline()
+                if b'OK' in line:
+                    return True
+            except Exception as e:
+                logger.exception(e)
+                return False
+
+    def suggest(self, collection: str, bucket: str, word: str, limit=10):
+        cmd = bytes(f'SUGGEST {collection} {bucket} "{word}" LIMIT({limit})\n', 'utf-8')
+        self.conn.writer.write(cmd)
+        event_id = None
+        while True:
+            line = self.conn.reader.readline()
+            print(line)
             if b'PENDING' in line:
                 event_id = self._parse_event_id(line)
                 print(f'Waiting for event {event_id}')
@@ -126,7 +152,6 @@ class Client:
     @staticmethod
     def _parse_query_results(line: bytes) -> List[str]:
         parts = line.replace(b'\n', b'').replace(b'\r', b'').split(b' ')
-        bucket = parts[3]
-        results = parts[4:]
+        results = parts[3:]
         return [r.decode('utf-8') for r in results]
 
