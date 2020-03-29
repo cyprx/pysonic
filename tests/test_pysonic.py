@@ -5,7 +5,7 @@ Sonic DB available at localhost:1491 to run
 import logging
 import pytest
 
-from pysonic import pysonic
+import pysonic
 
 
 logging.basicConfig(level=logging.DEBUG)

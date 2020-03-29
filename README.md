@@ -13,7 +13,7 @@ pip install pysonic --upgrade
 ## Usage
 
 ```python
-from pysonic import pysonic
+import pysonic
 
 c = pysonic.Client()
 with c:
