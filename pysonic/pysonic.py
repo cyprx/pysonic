@@ -1,3 +1,8 @@
+"""
+This package is simple client to interact with Sonic 
+via its socket protocol
+Please note that it is still under development
+"""
 from __future__ import annotations
 
 import socket
@@ -29,14 +34,14 @@ class Connection:
         self._writer = self._socket.makefile('wb', 0)
 
     @classmethod
-    def make_connection(cls, ip, port):
+    def open_connection(cls, ip, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         s.settimeout(10)
         s.connect((ip, port))
         buf = s.recv(1024)
         if b'CONNECTED' in buf:
-            print("Connected.")
+            logger.debug(f"{s} connected.")
             return cls(s)
 
     @property
@@ -55,20 +60,24 @@ class Pool:
     """
     Pool to manage socket connections
     """
-    def __init__(self, ip, port, size=1):
+    def __init__(self, ip, port, size=10):
         self.size = size
-
         self.conn_in_used = set()
         self.pool = []
         for i in range(size):
-            conn = Connection.make_connection(ip, port)
+            conn = Connection.open_connection(ip, port)
             self.pool.append(conn)
 
     def get_connection(self):
         for conn in self.pool:
             if conn not in self.conn_in_used:
                 self.conn_in_used.add(conn)
+                logger.debug(f"Obtained connection {conn}")
                 return conn
+
+    def release(self, conn):
+        self.conn_in_used.remove(conn)
+        logger.debug(f"{conn} released.")
 
 
 class Client:
@@ -76,19 +85,24 @@ class Client:
     API to communicate with Sonic db
     """
 
-    def __init__(self, host: str = '127.0.0.1', port: int = 1491, password: str = 'SecretPassword'):
+    def __init__(self, 
+            host: str = '127.0.0.1', 
+            port: int = 1491, 
+            password: str = 'SecretPassword',
+            size=10,):
         self.host = host
         self.port = port
         self.password = password
 
         self.conn = None
-        self._pool = Pool(host, port)
+        self._pool = Pool(host, port, size)
 
     def __enter__(self):
         self.conn = self._pool.get_connection()
 
     def __exit__(self, *args):
-        self.conn.close()
+        self.conn.writer.write(b'QUIT\n')
+        self._pool.release(self.conn)
 
     def ping(self):
         self.conn.writer.write(b'PING')
@@ -114,7 +128,7 @@ class Client:
             line = self.conn.reader.readline()
             if b'PENDING' in line:
                 event_id = self._parse_event_id(line)
-                print(f'Waiting for event {event_id}')
+                logger.info(f'Waiting for event {event_id}')
             elif event_id and event_id in line:
                 return self._parse_query_results(line)
 
@@ -136,10 +150,9 @@ class Client:
         event_id = None
         while True:
             line = self.conn.reader.readline()
-            print(line)
             if b'PENDING' in line:
                 event_id = self._parse_event_id(line)
-                print(f'Waiting for event {event_id}')
+                logger.info(f'Waiting for event {event_id}')
             elif event_id and event_id in line:
                 return self._parse_query_results(line)
 

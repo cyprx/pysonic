@@ -1,3 +1,7 @@
+"""
+Below are integration tests, please make sure you have 
+Sonic DB available at localhost:1491 to run
+"""
 import logging
 import pytest
 
@@ -8,7 +12,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('pysonic')
 
 
-@pytest.mark.skip
 def test_ping():
     c = pysonic.Client()
     with c:
@@ -16,7 +19,6 @@ def test_ping():
         print(resp)
 
 
-@pytest.mark.skip
 def test_select_mode():
     c = pysonic.Client()
     with c:
@@ -33,7 +35,6 @@ def test_query():
         print(resp)
 
 
-@pytest.mark.skip
 def test_ingest():
     c = pysonic.Client()
     with c:
