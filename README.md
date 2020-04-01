@@ -1,13 +1,13 @@
 # pysonic
 
-pysonic is a Python client for lightweight and fast search engine - Sonic
+pysonic is a Python client for lightweight and fast search engine - [Sonic](https://github.com/valeriansaliou/sonic)
 
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
 
 ```bash
-pip install pysonic --upgrade
+pip install python-sonic-client --upgrade
 ```
 
 ## Usage

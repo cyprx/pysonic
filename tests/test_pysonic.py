@@ -16,34 +16,34 @@ def test_ping():
     c = pysonic.Client()
     with c:
         resp = c.ping()
-        print(resp)
+        assert resp
 
 
 def test_select_mode():
     c = pysonic.Client()
     with c:
         resp = c.mode(pysonic.Mode.SEARCH)
-        print(resp)
-        print(c.ping())
+        assert resp
 
 
+@pytest.mark.skip
 def test_query():
     c = pysonic.Client()
     with c:
         print(c.mode(pysonic.Mode.SEARCH))
         resp = c.query("test", "test", "this is")
-        print(resp)
+        assert resp == ['product_1']
 
 
 def test_ingest():
     c = pysonic.Client()
     with c:
-        print(c.mode(pysonic.Mode.INGEST))
-        print(c.push("test", "test", "product_22", "this is product_22"))
+        c.mode(pysonic.Mode.INGEST)
+        assert c.push("test", "test", "product_22", "this is product_22")
 
 
 def test_suggest():
     c = pysonic.Client()
     with c:
-        print(c.mode(pysonic.Mode.SEARCH))
-        print(c.suggest("test", "test", "thi"))
+        c.mode(pysonic.Mode.SEARCH)
+        assert c.suggest("test", "test", "thi") == ['this']
