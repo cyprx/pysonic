@@ -16,8 +16,11 @@ pip install python-sonic-client --upgrade
 import pysonic
 
 c = pysonic.Client()
-with c:
-    resp = c.ping()
+with c.mode(pysonic.Mode.INGEST) as ingestor:
+    resp = ingestor.ping()
+
+with c.mode(pysonic.Mode.SEARCH) as searcher:
+    resp = searcher.ping()
 ```
 
 ## Contributing

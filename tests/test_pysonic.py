@@ -13,35 +13,26 @@ logger = logging.getLogger('pysonic')
 
 
 def test_ping():
-    c = pysonic.Client()
-    with c:
+    client = pysonic.Client()
+    with client.mode('search') as c:
         resp = c.ping()
         assert resp
 
 
-def test_select_mode():
-    c = pysonic.Client()
-    with c:
-        resp = c.mode(pysonic.Mode.SEARCH)
-        assert resp
-
-
-@pytest.mark.skip
 def test_query():
-    c = pysonic.Client()
-    with c:
-        print(c.mode(pysonic.Mode.SEARCH))
+    client = pysonic.Client()
+    with client.mode('search') as c:
         resp = c.query("test", "test", "this is")
         assert resp == ['product_1']
 
 
 def test_ingest():
-    c = pysonic.Client()
-    with c:
-        c.mode(pysonic.Mode.INGEST)
-        assert c.push("test", "test", "product_22", "this is product_22")
+    client = pysonic.Client()
+    with client.mode('ingest') as c:
+        c.push("test", "test", "product_22", "this is product_22")
 
 
+@pytest.mark.skip
 def test_suggest():
     c = pysonic.Client()
     with c:
