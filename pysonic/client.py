@@ -33,8 +33,8 @@ class Connection:
 
         cmd = bytes(f'START {mode} {password}\n', 'utf-8')
         self._writer.write(cmd)
-        if b'STARTED' in self._reader.readline():
-            logger.debug(f'Started {mode} on socket {self._socket}')
+        wait_for(self._reader, b'STARTED')
+        logger.debug(f'Started {mode} on socket {self._socket}')
 
     def __repr__(self):
         return f'<Connection {self._socket.getsockname()} ({self.mode})>'
@@ -131,17 +131,7 @@ class Client:
         return self.wait_for(b'PONG') == b'PONG'
 
     def wait_for(self, response: bytes, timeout=5):
-        start = time.time()
-        while True:
-            if time.time() > start + timeout:
-                raise TimeoutException()
-            line = self.conn.reader.readline()
-            if response in line:
-                return line.replace(b'\n', b'').replace(b'\r', b'')
-            elif line == b'':
-                continue
-            else:
-                raise UnexpectedResponseException(str(line))
+        return wait_for(self.conn.reader, response, timeout)
 
     @staticmethod
     def _parse_event_id(line: bytes):
@@ -199,4 +189,18 @@ class UnexpectedResponseException(Exception):
 class TimeoutException(Exception):
     pass
 
+
+def wait_for(reader, response: bytes, timeout=5):
+    start = time.time()
+    while True:
+        if time.time() > start + timeout:
+            raise TimeoutException()
+        line = reader.readline()
+        line = line.replace(b'\n', b'').replace(b'\r', b'')
+        if response in line:
+            return line
+        elif line == b'':
+            continue
+        else:
+            raise UnexpectedResponseException(str(line))
 
