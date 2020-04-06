@@ -117,12 +117,12 @@ class Pool:
         raise ConnectionLimitExceeded()
 
     def _renew_conn(self, conn):
-        self.deque.remove(conn)
+        self.pool.remove(conn)
         if conn in self.conn_in_used:
             self.conn_in_used.remove(conn)
         new_conn = Connection \
                 .open_connection(self.ip, self.port, self.password, self.mode)
-        self.deque.append(new_conn)
+        self.pool.append(new_conn)
 
     def _check_if_conn_is_stale(self, conn):
         live_time = (datetime.datetime.utcnow() - conn.created_at) \
