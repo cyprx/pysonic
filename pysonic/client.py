@@ -163,16 +163,20 @@ class Client:
     def __exit__(self, *args):
         self._pool.release(self.conn)
 
+    def _send(self, cmd):
+        logger.debug(f"Sending command: {cmd}")
+        self.conn.writer.write(cmd)
+
     def mode(self, mode: Mode):
         if mode == Mode.SEARCH:
             return SearchClient(self.host, self.port, self.password)
         return IngestClient(self.host, self.port, self.password)
 
     def ping(self):
-        self.conn.writer.write(b'PING\n')
-        return self.wait_for(b'PONG') == b'PONG'
+        self._send(b'PING\n')
+        return self._wait_for(b'PONG') == b'PONG'
 
-    def wait_for(self, response: bytes, timeout=5):
+    def _wait_for(self, response: bytes, timeout=5):
         return wait_for(self.conn.reader, response, timeout)
 
     @staticmethod
@@ -195,8 +199,8 @@ class IngestClient(Client):
         if '"' in text:
             text = text.replace('"', r'\"')
         cmd = bytes(f'PUSH {collection} {bucket} {object} "{text}"\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        self.wait_for(b'OK')
+        self._send(cmd)
+        self._wait_for(b'OK')
         logger.info(f'Push {object}-{text} done.')
 
     def pop(self):
@@ -209,26 +213,26 @@ class IngestClient(Client):
             if object:
                 cmd += f' {object}'
         cmd = bytes(cmd + '\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        res = self.wait_for(b'RESULT')
+        self._send(cmd)
+        res = self._wait_for(b'RESULT')
         return self._parse_result(res)
 
     def flushc(self, collection: str):
         cmd = bytes(f'FLUSHC {collection}\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        res = self.wait_for(b'RESULT')
+        self._send(cmd)
+        res = self._wait_for(b'RESULT')
         return self._parse_result(res)
 
     def flushb(self, collection: str, bucket: str):
         cmd = bytes(f'FLUSHB {collection} {bucket}\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        res = self.wait_for(b'RESULT')
+        self._send(cmd)
+        res = self._wait_for(b'RESULT')
         return self._parse_result(res)
 
     def flusho(self, collection: str, bucket: str, object: str):
         cmd = bytes(f'FLUSHB {collection} {bucket} {object}\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        res = self.wait_for(b'RESULT')
+        self._send(cmd)
+        res = self._wait_for(b'RESULT')
         return self._parse_result(res)
 
     def _parse_result(self, line):
@@ -240,20 +244,20 @@ class SearchClient(Client):
         self._pool = Pool.get_pool(host, port, password, Mode.SEARCH)
 
     def query(self, collection: str, bucket: str, terms: str, limit=10, offset=0):
-        cmd = bytes(f'QUERY {collection} {bucket} "{terms}"\n', 'utf-8')
-        self.conn.writer.write(cmd)
+        cmd = bytes(f'QUERY {collection} {bucket} "{terms}" LIMIT({limit}) OFFSET({offset})\n', 'utf-8')
+        self._send(cmd)
 
-        pending = self.wait_for(b'PENDING')
+        pending = self._wait_for(b'PENDING')
         event_id = self._parse_event_id(pending)
-        results = self.wait_for(event_id)
+        results = self._wait_for(event_id)
         return self._parse_query_results(results)
 
     def suggest(self, collection: str, bucket: str, word: str, limit=10):
         cmd = bytes(f'SUGGEST {collection} {bucket} "{word}" LIMIT({limit})\n', 'utf-8')
-        self.conn.writer.write(cmd)
-        pending = self.wait_for(b'PENDING')
+        self._send(cmd)
+        pending = self._wait_for(b'PENDING')
         event_id = self._parse_event_id(pending)
-        results = self.wait_for(event_id)
+        results = self._wait_for(event_id)
         return self._parse_query_results(results)
 
 
