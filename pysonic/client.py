@@ -80,7 +80,7 @@ class Pool:
             mode,
             size=10,
             auto_reconnect=True,
-            conn_ttl=3600, # seconds
+            conn_ttl=300, # seconds
             ):
         self.size = size
         self.conn_in_used = set()
