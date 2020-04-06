@@ -29,7 +29,7 @@ def test_query():
 def test_ingest():
     client = pysonic.Client()
     with client.mode('ingest') as c:
-        c.push("test", "test", "product_22", "this is product_22")
+        c.push("test", "test", "product 22", "this is product_22")
 
 
 @pytest.mark.skip

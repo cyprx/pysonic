@@ -21,6 +21,18 @@ with c.mode(pysonic.Mode.INGEST) as ingestor:
 
 with c.mode(pysonic.Mode.SEARCH) as searcher:
     resp = searcher.ping()
+
+
+## TODO 0.1.0
+- Ingest commands: POP, COUNT, FLUSHC, FLUSHB, FLUSHO
+- Implement queue, auto reconnect socket
+- Support escape characters
+- Support Control mode
+- Support push a bulk by parallel sockets
+- Support LANG
+- Add tags: testcov, version, build
+- Update tests
+
 ```
 
 ## Contributing
