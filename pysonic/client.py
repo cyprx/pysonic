@@ -108,7 +108,7 @@ class Pool:
     def get_connection(self):
         for conn in self.pool:
             if self._check_if_conn_is_stale(conn):
-                self._renew(conn)
+                self._renew_conn(conn)
                 return self.get_connection()
             if conn not in self.conn_in_used:
                 self.conn_in_used.add(conn)
