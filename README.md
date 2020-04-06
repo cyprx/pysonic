@@ -22,6 +22,7 @@ with c.mode(pysonic.Mode.INGEST) as ingestor:
 with c.mode(pysonic.Mode.SEARCH) as searcher:
     resp = searcher.ping()
 
+```
 
 ## TODO 0.1.0
 - Ingest commands: POP, COUNT, FLUSHC, FLUSHB, FLUSHO
@@ -33,7 +34,6 @@ with c.mode(pysonic.Mode.SEARCH) as searcher:
 - Add tags: testcov, version, build
 - Update tests
 
-```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
