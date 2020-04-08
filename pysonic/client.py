@@ -62,6 +62,12 @@ class Connection:
     def writer(self):
         return self._writer
 
+    def ping(self):
+        cmd = bytes(f'PING\n', 'utf-8')
+        self._writer.write(cmd)
+        return wait_for(self._reader, b'PONG') == b'PONG'
+
+
     def close(self):
         return self._socket.close()
 
@@ -117,18 +123,28 @@ class Pool:
         raise ConnectionLimitExceeded()
 
     def _renew_conn(self, conn):
-        self.pool.remove(conn)
-        if conn in self.conn_in_used:
-            self.conn_in_used.remove(conn)
+        self._destroy_conn(conn)
         new_conn = Connection \
                 .open_connection(self.ip, self.port, self.password, self.mode)
         self.pool.append(new_conn)
+
+    def _destroy_conn(self, conn):
+        self.pool.remove(conn)
+        if conn in self.conn_in_used:
+            self.conn_in_used.remove(conn)
+        conn.close()
 
     def _check_if_conn_is_stale(self, conn):
         live_time = (datetime.datetime.utcnow() - conn.created_at) \
                 .total_seconds()
         if live_time > self.conn_ttl:
             return True
+        if self.auto_reconnect:
+            try:
+                conn.ping()
+            except Exception as e:
+                logger.debug(f"Connection {conn} dead, trying to renew")
+                return True
         return False
 
     def release(self, conn):
@@ -201,7 +217,7 @@ class IngestClient(Client):
         cmd = bytes(f'PUSH {collection} {bucket} {object} "{text}"\n', 'utf-8')
         self._send(cmd)
         self._wait_for(b'OK')
-        logger.info(f'Push {object}-{text} done.')
+        logger.info(f'{object}-{text} ingested.')
 
     def pop(self):
         pass
