@@ -51,6 +51,13 @@ def test_ping():
         assert resp
 
 
+def test_count(collection, bucket, object):
+    client = pysonic.Client()
+    with client.mode('ingest') as c:
+        resp = c.count(collection, bucket)
+        print(resp)
+
+
 @pytest.mark.skip
 def test_ingest():
     client = pysonic.Client()
@@ -66,11 +73,10 @@ def test_query(collection, bucket, object):
 
 
 @pytest.mark.skip
-def test_suggest():
-    c = pysonic.Client()
-    with c:
-        c.mode(pysonic.Mode.SEARCH)
-        assert c.suggest("test", "test", "thi") == ['this']
+def test_suggest(collection, bucket):
+    client = pysonic.Client()
+    with client.mode('search') as c:
+        assert c.suggest(collection, bucket, "engli") == ['english']
 
 
 @pytest.mark.skip

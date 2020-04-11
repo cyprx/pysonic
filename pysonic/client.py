@@ -212,15 +212,16 @@ class IngestClient(Client):
         self._pool = Pool.get_pool(host, port, password, Mode.INGEST)
 
     def push(self, collection: str, bucket: str, object: str, text: str) -> None:
-        if '"' in text:
-            text = text.replace('"', r'\"')
         cmd = bytes(f'PUSH {collection} {bucket} {object} "{text}"\n', 'utf-8')
         self._send(cmd)
         self._wait_for(b'OK')
         logger.info(f'{object}-{text} ingested.')
 
-    def pop(self):
-        pass
+    def pop(self, collection: str, bucket: str, object: str, text: str) -> None:
+        cmd = bytes(f'PUSH {collection} {bucket} {object} "{text}"\n', 'utf-8')
+        self._send(cmd)
+        self._wait_for(b'OK')
+        logger.info(f'{object}-{text} popped.')
 
     def count(self, collection: str, bucket: str = None, object: str = None):
         cmd = f'COUNT {collection}'
